@@ -1,0 +1,405 @@
+{% load static %}
+{% load diet_extras %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG Recipe Recommendations</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+        }
+        
+        .rag-pipeline {
+            background: #e8f4fd;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        
+        .rag-pipeline h3 {
+            margin: 0 0 10px 0;
+            color: #2980b9;
+        }
+        
+        .pipeline-steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+        
+        .pipeline-step {
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .pipeline-step strong {
+            color: #2c3e50;
+        }
+        
+        .recommendations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+        }
+        
+        .recipe-card {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        
+        .recipe-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        
+        .recipe-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        
+        .recipe-content {
+            padding: 15px;
+        }
+        
+        .recipe-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+        }
+        
+        .recipe-meta {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+            color: #7f8c8d;
+        }
+        
+        .similarity-score {
+            background: #27ae60;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+        
+        .nutrition-info {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+        
+        .nutrition-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #2c3e50;
+        }
+        
+        .nutrition-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            font-size: 0.9em;
+        }
+        
+        .nutrition-item {
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .ingredients-list {
+            margin-top: 15px;
+        }
+        
+        .ingredients-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #2c3e50;
+        }
+        
+        .ingredients {
+            font-size: 0.9em;
+            color: #555;
+            line-height: 1.4;
+        }
+        
+        .ingredient-item {
+            margin-bottom: 4px;
+        }
+        
+        .back-button {
+            display: inline-block;
+            background: #3498db;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            transition: background-color 0.2s;
+        }
+        
+        .back-button:hover {
+            background: #2980b9;
+        }
+        
+        .user-preferences {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .user-preferences h3 {
+            margin: 0 0 10px 0;
+            color: #856404;
+        }
+        
+        .preferences-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+        
+        .preference-item {
+            background: white;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        
+        .preference-label {
+            font-weight: 600;
+            color: #856404;
+        }
+        
+        .no-recommendations {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="{% url 'diet:rag_recipe_search' %}" class="back-button">← Back to RAG Search</a>
+        
+        <div class="header">
+            <h1>🤖 AI-Generated Recipe Recommendations</h1>
+            <p>Personalized recipes using RAG (Retrieval-Augmented Generation) based on your preferences</p>
+        </div>
+        
+        <div class="rag-pipeline">
+            <h3>🔍 RAG Pipeline Overview</h3>
+            <div class="pipeline-steps">
+                <div class="pipeline-step">
+                    <strong>Database:</strong> {{ rag_pipeline_info.database }}
+                </div>
+                <div class="pipeline-step">
+                    <strong>Embedding:</strong> {{ rag_pipeline_info.embedding }}
+                </div>
+                <div class="pipeline-step">
+                    <strong>Retrieval:</strong> {{ rag_pipeline_info.retrieval }}
+                </div>
+                <div class="pipeline-step">
+                    <strong>Augmentation:</strong> {{ rag_pipeline_info.augmentation }}
+                </div>
+                <div class="pipeline-step">
+                    <strong>Generation:</strong> {{ rag_pipeline_info.generation }}
+                </div>
+            </div>
+        </div>
+        
+        <div class="user-preferences">
+            <h3>👤 Your Preferences Used for Recommendations</h3>
+            <div class="preferences-grid">
+                {% if user_preferences.dietary_tags %}
+                <div class="preference-item">
+                    <div class="preference-label">Dietary Tags:</div>
+                    <div>{{ user_preferences.dietary_tags|join:", " }}</div>
+                </div>
+                {% endif %}
+                
+                {% if user_preferences.preferred_cuisines %}
+                <div class="preference-item">
+                    <div class="preference-label">Preferred Cuisines:</div>
+                    <div>{{ user_preferences.preferred_cuisines|join:", " }}</div>
+                </div>
+                {% endif %}
+                
+                {% if user_preferences.allergies %}
+                <div class="preference-item">
+                    <div class="preference-label">Allergies:</div>
+                    <div>{{ user_preferences.allergies|join:", " }}</div>
+                </div>
+                {% endif %}
+                
+                {% if user_preferences.dislikes %}
+                <div class="preference-item">
+                    <div class="preference-label">Dislikes:</div>
+                    <div>{{ user_preferences.dislikes|join:", " }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        {% if recommendations %}
+        <div class="recommendations-grid">
+            {% for recipe in recommendations %}
+            <div class="recipe-card">
+                {% if recipe.meal_thumb %}
+                <img src="{{ recipe.meal_thumb }}" alt="{{ recipe.meal_name }}" class="recipe-image">
+                {% endif %}
+                
+                <div class="recipe-content">
+                    <div class="recipe-title">{{ recipe.meal_name }}</div>
+                    
+                    <div class="recipe-meta">
+                        {% if recipe.category %}
+                        <span>📂 {{ recipe.category }}</span>
+                        {% endif %}
+                        {% if recipe.area %}
+                        <span>🌍 {{ recipe.area }}</span>
+                        {% endif %}
+                        <span class="similarity-score">🎯 {{ recipe.similarity_score }}</span>
+                    </div>
+                    
+                    {% if recipe.nutrition %}
+                    <div class="nutrition-info">
+                        <div class="nutrition-title">📊 Nutrition (per recipe)</div>
+                        <div class="nutrition-grid">
+                            <div class="nutrition-item">
+                                <span>Calories:</span>
+                                <span>{{ recipe.nutrition.calories }} kcal</span>
+                            </div>
+                            <div class="nutrition-item">
+                                <span>Protein:</span>
+                                <span>{{ recipe.nutrition.protein }}g</span>
+                            </div>
+                            <div class="nutrition-item">
+                                <span>Carbs:</span>
+                                <span>{{ recipe.nutrition.carbs }}g</span>
+                            </div>
+                            <div class="nutrition-item">
+                                <span>Fat:</span>
+                                <span>{{ recipe.nutrition.fat }}g</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if recipe.ingredients %}
+                    <div class="ingredients-list">
+                        <div class="ingredients-title">🥘 Key Ingredients</div>
+                        <div class="ingredients">
+                            {% for ingredient in recipe.ingredients|slice:":5" %}
+                            <div class="ingredient-item">
+                                • {{ ingredient.ingredient }}
+                                {% if ingredient.measure %}
+                                <span style="color: #999;">({{ ingredient.measure }})</span>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                            {% if recipe.ingredients|length > 5 %}
+                            <div class="ingredient-item" style="color: #999;">
+                                ... and {{ recipe.ingredients|length|add:"-5" }} more ingredients
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    <div class="recipe-actions" style="margin-top: 16px;">
+                        <button class="btn-save save-rag-recipe-btn" data-recipe-id="{{ recipe.id }}">Save to My Meals</button>
+                        <div class="save-status" id="save-status-{{ recipe.id }}" style="margin-top: 5px; font-size: 0.9em; font-weight: bold;"></div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="no-recommendations">
+            <h3>No recommendations found</h3>
+            <p>Try updating your dietary preferences or check back later.</p>
+        </div>
+        {% endif %}
+    </div>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const saveButtons = document.querySelectorAll('.save-rag-recipe-btn');
+        saveButtons.forEach(btn => {
+            btn.addEventListener('click', function(event) {
+                event.preventDefault();
+                const recipeId = this.getAttribute('data-recipe-id');
+                const statusDiv = document.getElementById(`save-status-${recipeId}`);
+                if (this.disabled) return;
+                statusDiv.textContent = 'Saving...';
+                statusDiv.style.color = '#333';
+                this.disabled = true;
+                fetch(`/diet/save-rag-recipe/${recipeId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json'
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        statusDiv.textContent = 'Saved!';
+                        statusDiv.style.color = 'green';
+                        this.textContent = 'Saved!';
+                    } else if (data.status === 'exists') {
+                        statusDiv.textContent = 'Already saved.';
+                        statusDiv.style.color = 'blue';
+                        this.textContent = 'Already Saved';
+                    } else {
+                        statusDiv.textContent = 'Error: ' + data.message;
+                        statusDiv.style.color = 'red';
+                        this.disabled = false;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    statusDiv.textContent = 'An unexpected error occurred.';
+                    statusDiv.style.color = 'red';
+                    this.disabled = false;
+                });
+            });
+        });
+    });
+    </script>
+</body>
+</html> 

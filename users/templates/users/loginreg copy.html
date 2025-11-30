@@ -1,0 +1,45 @@
+{% load socialaccount %}
+<h1>Well well well... Wellness</h1>
+
+<h2>Login</h2>
+<form method="post">
+  {% csrf_token %}
+  {{ login_form.non_field_errors }}
+
+  <label>Email</label>
+  <input type="email" name="email" value="{{ login_form.email.value|default_if_none:'' }}">
+  {{ login_form.email.errors }}
+
+  <label>Password</label>
+  <input type="password" name="password">
+  {{ login_form.password.errors }}
+
+  <button type="submit" name="login_submit">Login</button>
+</form>
+
+<hr>
+
+<h2>Register</h2>
+<form method="post">
+  {% csrf_token %}
+  {{ register_form.non_field_errors }}
+
+  <label>Email</label>
+  <input type="email" name="email" value="{{ register_form.email.value|default_if_none:'' }}">
+  {{ register_form.email.errors }}
+
+  <label>Password</label>
+  <input type="password" name="password">
+  {{ register_form.password.errors }}
+
+  <label>Confirm Password</label>
+  <input type="password" name="password_confirm">
+  {{ register_form.password_confirm.errors }}
+
+  <button type="submit" name="register_submit">Register</button>
+</form>
+
+<hr>
+<h3>Or sign in with:</h3>
+<a href="{% provider_login_url 'google' %}">Login with Google</a>
+<a href="{% provider_login_url 'github' %}">Login with GitHub</a>

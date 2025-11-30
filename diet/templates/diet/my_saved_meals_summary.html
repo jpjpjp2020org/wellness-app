@@ -1,0 +1,100 @@
+{% load static %}
+{% load diet_extras %}
+
+<div class="saved-meals-summary" style="min-height: 1200px;">
+    <h1>My Saved Meals (Summary)</h1>
+    {% if meal_analysis %}
+    <div class="nutrition-analysis">
+        <h2>Your Nutrition Plan</h2>
+        <div class="analysis-grid">
+            <div class="analysis-section">
+                <h3>Daily Targets</h3>
+                <p class="highlight">{{ meal_analysis.daily_calories }} calories per day</p>
+                <h4>Macro Split</h4>
+                <div class="macro-distribution">
+                    <div class="macro">
+                        <span class="macro-label">Protein</span>
+                        <span class="macro-value">{{ meal_analysis.macro_split.protein }}%</span>
+                    </div>
+                    <div class="macro">
+                        <span class="macro-label">Carbs</span>
+                        <span class="macro-value">{{ meal_analysis.macro_split.carbs }}%</span>
+                    </div>
+                    <div class="macro">
+                        <span class="macro-label">Fats</span>
+                        <span class="macro-value">{{ meal_analysis.macro_split.fats }}%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    <div class="ai-nutritional-analysis" style="margin: 20px 0; padding: 18px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px;">
+        <h2 style="color: #856404; margin: 0;">AI Nutritional Analysis</h2>
+        {% if ai_nutrition_insight %}
+            <div style="color: #495057; line-height: 1.6; white-space: pre-line;">{{ ai_nutrition_insight }}</div>
+        {% else %}
+            <div style="color: #868e96;">No AI nutrition analysis available yet. Generate a meal plan and AI analysis to see insights here.</div>
+        {% endif %}
+    </div>
+    <div class="static-planning-window">
+        <h3>Current Meal Plan Structure</h3>
+        <div class="week-overview">
+            {% for day in week_days %}
+            <div class="day-column">
+                <div class="day-header">{{ day.date|date:"D, M d" }}</div>
+                <div class="meal-slots">
+                    {% for slot in meal_slots %}
+                    <div class="meal-slot" data-day="{{ day.formatted_date }}" data-meal="{{ slot }}">
+                        <h4>{{ slot|capfirst }}</h4>
+                        <div class="slot-content">
+                            {% with planned=planned_meals|get_item:day.formatted_date|get_item:slot %}
+                                {% if planned %}
+                                    <div class="planned-meal">
+                                        <span>{{ planned }}</span>
+                                    </div>
+                                {% endif %}
+                            {% endwith %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+<style>
+.saved-meals-summary {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+    min-height: 1200px;
+}
+.week-overview {
+    display: flex;
+    gap: 16px;
+    margin-top: 24px;
+}
+.day-column {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 12px;
+    flex: 1 1 120px;
+    min-width: 120px;
+}
+.day-header {
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+.meal-slot {
+    margin-bottom: 12px;
+}
+.planned-meal {
+    background: #fff;
+    border-radius: 4px;
+    padding: 6px 10px;
+    margin-bottom: 4px;
+    font-size: 0.98em;
+}
+</style> 

@@ -1,0 +1,36 @@
+<div class="dashboard-summary" style="margin-top: 32px; padding: 24px; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">
+    <h2 style="color: #1971c2; margin-bottom: 18px;">Summary & Insights</h2>
+    
+    <!-- Health Data -->
+    {% if health_profile %}
+    <div style="margin-bottom: 18px;">
+        <h3 style="color: #099268;">Health Profile</h3>
+        <div><strong>Height:</strong> {{ health_profile.height }} cm</div>
+        <div><strong>Weight:</strong> {{ health_profile.weight }} kg</div>
+        <div><strong>BMI:</strong> {{ health_profile.bmi|floatformat:2 }}</div>
+        <div><strong>Wellness Score:</strong> {{ wellness_score }}</div>
+        {% if nutrition_adjusted_score %}
+        <div><strong>Nutrition-Adjusted Wellness Score:</strong> {{ nutrition_adjusted_score }} <span style="color: #868e96;">(Adherence Ratio: {{ adherence_ratio|floatformat:2 }})</span></div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Nutrition Data -->
+    <div style="margin-bottom: 18px;">
+        <h3 style="color: #845ef7;">7-Day Nutrition Summary</h3>
+        <div><strong>Total Calories:</strong> {{ total_calories|floatformat:0 }} kcal</div>
+        <div><strong>Total Protein:</strong> {{ total_protein|floatformat:0 }} g</div>
+        <div><strong>Total Carbs:</strong> {{ total_carbs|floatformat:0 }} g</div>
+        <div><strong>Total Fat:</strong> {{ total_fat|floatformat:0 }} g</div>
+    </div>
+
+    <!-- AI Insights -->
+    <div style="margin-bottom: 18px;">
+        <h3 style="color: #ff922b;">AI Insights</h3>
+        {% if ai_nutrition_insight %}
+            <div style="background: #fff3cd; border: 1px solid #ffe066; border-radius: 6px; padding: 14px; color: #856404; white-space: pre-line;">{{ ai_nutrition_insight }}</div>
+        {% else %}
+            <div style="color: #868e96;">No AI nutrition analysis available yet. Generate a meal plan and AI analysis to see insights here.</div>
+        {% endif %}
+    </div>
+</div> 

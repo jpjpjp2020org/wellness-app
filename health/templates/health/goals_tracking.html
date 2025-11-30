@@ -1,0 +1,179 @@
+{% load static %}
+<!-- Chart.js content delivery network (CDN) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="goals-container">
+    <h2>Your Goal Plan</h2>
+    
+    <div class="tips-section">
+        <p><strong>Tips:</strong></p>
+        <ol>
+            <li>Once you have evaluated your General Assesment and AI-generated tips, you can add more data here and get suggestions for weekly and monthly suggestions.</li>
+            <li>If you update your weight or info in the Health profile, it will be taken into account, thus the information here will be updated to fit your progress or lack of it.</li>
+        </ol>
+    </div>
+
+    <div class="form-section">
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="button primary">Save</button>
+        </form>
+    </div>
+
+    {% if plan %}
+        <div class="plan-section">
+            <div class="plan-item">
+                <h3>AI Weekly Plan</h3>
+                <p>{{ plan.ai_weekly_plan|default:"Not yet generated." }}</p>
+            </div>
+
+            <div class="plan-item">
+                <h3>AI Monthly Plan</h3>
+                <p>{{ plan.ai_monthly_plan|default:"Not yet generated." }}</p>
+            </div>
+
+            <div class="plan-item">
+                <h4>Suggested Target Date:</h4>
+                <p>{{ plan.ai_target_date }}</p>
+            </div>
+
+            <div class="plan-item">
+                <h4>Priority: {{ plan.ai_priority|default:"N/A" }}</h4>
+                <details class="priority-details">
+                    <summary>Priority: {{ plan.ai_priority|capfirst }}</summary>
+                    <p>{{ plan.ai_priority_reason|default:"No reason provided." }}</p>
+                </details>
+            </div>
+        </div>
+    {% else %}
+        <p class="no-plan">No plan found yet.</p>
+    {% endif %}
+
+    <p><a href="{% url 'health:profile_entry' %}" class="button">Back to Your health profile info and update form</a></p>
+</div>
+
+<style>
+    .goals-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    h2, h3, h4 {
+        color: #333;
+        margin: 20px 0;
+    }
+
+    .tips-section {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 4px;
+        margin: 20px 0;
+    }
+
+    .tips-section ol {
+        margin-left: 20px;
+        padding-left: 0;
+    }
+
+    .tips-section li {
+        margin-bottom: 10px;
+        color: #666;
+    }
+
+    .form-section {
+        background: white;
+        padding: 20px;
+        border-radius: 4px;
+        margin: 20px 0;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .plan-section {
+        margin: 20px 0;
+    }
+
+    .plan-item {
+        background: white;
+        padding: 20px;
+        border-radius: 4px;
+        margin: 15px 0;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .priority-details {
+        margin: 10px 0;
+    }
+
+    .priority-details summary {
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .priority-details p {
+        padding: 10px;
+        margin: 10px 0;
+        color: #666;
+    }
+
+    .no-plan {
+        text-align: center;
+        color: #666;
+        font-style: italic;
+        margin: 20px 0;
+    }
+
+    .button {
+        display: inline-block;
+        padding: 8px 16px;
+        background: #fff;
+        color: #333;
+        text-decoration: none;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        margin: 5px;
+        transition: all 0.2s ease;
+    }
+
+    .button:hover {
+        background: #f8f9fa;
+        border-color: #ccc;
+    }
+
+    .button.primary {
+        background: #007bff;
+        color: white;
+        border-color: #0056b3;
+    }
+
+    .button.primary:hover {
+        background: #0056b3;
+    }
+
+    form p {
+        margin: 15px 0;
+    }
+
+    form input[type="text"],
+    form input[type="number"],
+    form textarea,
+    form select {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        margin-top: 5px;
+    }
+
+    form label {
+        color: #444;
+        display: block;
+        margin-bottom: 5px;
+    }
+</style>
+
+<script src="{% static 'js/chart_helpers.js' %}"></script>
+

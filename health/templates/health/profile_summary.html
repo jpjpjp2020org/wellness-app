@@ -1,0 +1,239 @@
+{% load static %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0"></script>
+
+<div class="health-container" style="min-height: 1000px;">
+    <h2>Health Profile (Summary)</h2>
+    <div class="profile-info">
+        <div class="info-item"><strong>Height:</strong> {{ profile.height_cm }} cm</div>
+        <div class="info-item"><strong>Weight:</strong> {{ profile.weight_kg }} kg</div>
+        <div class="info-item"><strong>Lifestyle:</strong> {{ profile.lifestyle }}</div>
+        <div class="info-item"><strong>Goals:</strong> {{ profile.fitness_goals }}</div>
+        <div class="info-item"><strong>Diet:</strong> {{ profile.dietary_preferences }}</div>
+        <div class="info-item"><strong>BMI:</strong> {{ profile.bmi|floatformat:2 }}</div>
+        <div class="info-item"><strong>Classification:</strong> {{ profile.bmi_classification }}</div>
+        <div class="info-item"><strong>Wellness Score (base 100):</strong> {{ score }}</div>
+        {% if adjusted_wellness_score %}
+        <div class="info-item" style="color: #099268;"><strong>Nutrition-Adjusted Wellness Score:</strong> {{ adjusted_wellness_score }} <span style="font-size: 0.9em; color: #868e96;">(Base: {{ base_wellness_score }}, Ratio: {{ adherence_ratio }})</span></div>
+        <div class="info-item" style="font-size: 0.95em; color: #868e96; margin-top: -6px;">
+            <em>This score is adjusted for your recent nutrition adherence from your 7-day meal plan.</em>
+        </div>
+        {% endif %}
+    </div>
+    <div class="ai-section">
+        <h3>AI-Inferred Categories:</h3>
+        {% if profile.assessment_data %}
+            {% with profile.assessment_data as ai %}
+                <div class="info-item"><strong>Lifestyle:</strong> {{ ai.lifestyle_category|default:"(not set)" }}</div>
+                <div class="info-item"><strong>Diet:</strong> {{ ai.diet_category|default:"(not set)" }}</div>
+                <div class="info-item"><strong>Goal:</strong> {{ ai.goal_category|default:"(not set)" }}</div>
+                <div class="info-item small"><em>(Raw test values):</em> {{ ai }}</div>
+            {% endwith %}
+        {% else %}
+            <p>AI summary not yet available.</p>
+        {% endif %}
+    </div>
+    <div class="assessment-section">
+        <h3>AI Health General Assessment:</h3>
+        {% if insight %}
+            <p>{{ insight.content }}</p>
+        {% else %}
+            <p>No recommendation available yet.</p>
+        {% endif %}
+    </div>
+    <div class="charts-section">
+        <div class="chart-container">
+            <h3>Wellness Score Chart</h3>
+            <canvas id="scoreChart" width="400" height="200"></canvas>
+            {{ score_chart_json|json_script:"score-data" }}
+        </div>
+        <div class="chart-container">
+            <h3>Weight Tracking Chart</h3>
+            <canvas id="weightChart" width="400" height="200"></canvas>
+            {{ weight_chart_json|json_script:"weight-data" }}
+        </div>
+        <div class="chart-container">
+            <h3>Daily Activity Tracking</h3>
+            <canvas id="activityChart" width="400" height="200"></canvas>
+            {{ activity_chart_json|json_script:"activity-data" }}
+        </div>
+    </div>
+    {% if progress_summary %}
+        <div class="progress-section">
+            <h3>Progress Summary</h3>
+            <table class="progress-table">
+                <tr>
+                    <th>Start Weight</th>
+                    <td>{{ progress_summary.start_weight }} kg</td>
+                </tr>
+                <tr>
+                    <th>Current Weight</th>
+                    <td>{{ progress_summary.current_weight }} kg</td>
+                </tr>
+                <tr>
+                    <th>Goal Weight</th>
+                    <td>{{ progress_summary.goal_weight }} kg</td>
+                </tr>
+                <tr>
+                    <th>Weekly Goal (Target Change)</th>
+                    <td>{{ progress_summary.weekly_goal_delta }} kg</td>
+                </tr>
+                <tr>
+                    <th>Actual Change Since {{ progress_summary.weekly_start|date:"M d" }}</th>
+                    <td>
+                        {% if progress_summary.weekly_actual_delta != None %}
+                            {{ progress_summary.weekly_actual_delta }} kg
+                        {% else %}
+                            No data
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>Monthly Goal (Target Change)</th>
+                    <td>{{ progress_summary.monthly_goal_delta }} kg</td>
+                </tr>
+                <tr>
+                    <th>Actual Change Since {{ progress_summary.monthly_start|date:"M d" }}</th>
+                    <td>
+                        {% if progress_summary.monthly_actual_delta != None %}
+                            {{ progress_summary.monthly_actual_delta }} kg
+                        {% else %}
+                            No data
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>Days Remaining</th>
+                    <td>{{ progress_summary.days_left }}</td>
+                </tr>
+            </table>
+        </div>
+    {% else %}
+        <p><em>No progress summary available yet. Please update your profile and goal data.</em></p>
+    {% endif %}
+</div>
+<style>
+    .health-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px;
+        min-height: 1000px;
+    }
+    h2, h3 {
+        color: #333;
+        margin: 20px 0;
+    }
+    .profile-info, .ai-section {
+        background: white;
+        padding: 20px;
+        border-radius: 4px;
+        margin: 20px 0;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .info-item {
+        margin: 10px 0;
+        color: #444;
+    }
+    .info-item.small {
+        font-size: 0.9em;
+        color: #888;
+    }
+    .assessment-section {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 4px;
+        margin: 20px 0;
+    }
+    .charts-section {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 24px;
+        margin: 20px 0;
+    }
+    .chart-container {
+        background: #fff;
+        padding: 16px;
+        border-radius: 4px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+        flex: 1 1 300px;
+        min-width: 300px;
+        min-height: 300px;
+    }
+    .progress-section {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 4px;
+        margin: 20px 0;
+    }
+    .progress-table th, .progress-table td {
+        padding: 6px 12px;
+        text-align: left;
+    }
+</style>
+<script>
+window.addEventListener('DOMContentLoaded', function() {
+    // Score Chart
+    const scoreData = JSON.parse(document.getElementById('score-data').textContent);
+    new Chart(document.getElementById('scoreChart').getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: scoreData.labels,
+            datasets: [{
+                label: 'Wellness Score',
+                data: scoreData.data,
+                borderColor: '#63e6be',
+                backgroundColor: 'rgba(99,230,190,0.1)',
+                fill: true,
+                tension: 0.3,
+                pointRadius: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'top' } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+    // Weight Chart
+    const weightData = JSON.parse(document.getElementById('weight-data').textContent);
+    new Chart(document.getElementById('weightChart').getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: weightData.labels,
+            datasets: [{
+                label: 'Weight (kg)',
+                data: weightData.data,
+                borderColor: '#ff6b6b',
+                backgroundColor: 'rgba(255,107,107,0.1)',
+                fill: true,
+                tension: 0.3,
+                pointRadius: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'top' } },
+            scales: { y: { beginAtZero: false } }
+        }
+    });
+    // Activity Chart
+    const activityData = JSON.parse(document.getElementById('activity-data').textContent);
+    new Chart(document.getElementById('activityChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: activityData.labels,
+            datasets: [{
+                label: 'Activity',
+                data: activityData.data.map(d => d.y),
+                backgroundColor: '#845ef7',
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            indexAxis: 'y',
+            scales: { x: { beginAtZero: true } }
+        }
+    });
+});
+</script> 

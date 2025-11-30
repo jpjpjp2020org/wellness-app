@@ -1,0 +1,490 @@
+{% load static %}
+{% load diet_extras %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipe Database Search (RAG)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f5f5f5;
+        }
+        
+        .header {
+            background: white;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .header h1 {
+            margin: 0;
+            color: #333;
+        }
+        
+        .back-link {
+            margin-bottom: 10px;
+        }
+        
+        .back-link a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+        
+        .rag-search-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .stats {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .rag-status {
+            background: #e8f4fd;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #3498db;
+        }
+
+        .rag-status h3 {
+            margin: 0 0 10px 0;
+            color: #2980b9;
+        }
+
+        .rag-actions {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .rag-button {
+            background: #27ae60;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        .rag-button:hover {
+            background: #229954;
+            color: white;
+        }
+
+        .search-form {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .search-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .search-button {
+            padding: 12px 24px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .search-button:hover {
+            background: #0056b3;
+        }
+
+        .search-options {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .search-type {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .search-type input[type="checkbox"] {
+            margin: 0;
+        }
+
+        .filters {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .filter-select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            min-width: 150px;
+        }
+
+        .recipe-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .recipe-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+
+        .recipe-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .recipe-image {
+            height: 200px;
+            overflow: hidden;
+        }
+
+        .recipe-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .no-image {
+            width: 100%;
+            height: 100%;
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+        }
+
+        .recipe-content {
+            padding: 15px;
+        }
+
+        .recipe-title {
+            margin: 0 0 10px 0;
+            font-size: 1.2em;
+            color: #333;
+        }
+
+        .recipe-meta {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+            color: #666;
+            flex-wrap: wrap;
+        }
+
+        .category, .area {
+            background: #f8f9fa;
+            padding: 2px 8px;
+            border-radius: 12px;
+        }
+
+        .similarity-score {
+            background: #27ae60;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        .recipe-tags {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            background: #e9ecef;
+            color: #495057;
+            padding: 2px 6px;
+            border-radius: 8px;
+            font-size: 0.8em;
+        }
+
+        .recipe-actions {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .view-button {
+            background: #28a745;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 0.9em;
+            transition: background 0.2s;
+        }
+
+        .view-button:hover {
+            background: #218838;
+            color: white;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .search-info {
+            background: #fff3cd;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ffc107;
+        }
+
+        @media (max-width: 768px) {
+            .search-row {
+                flex-direction: column;
+            }
+            
+            .filters {
+                flex-direction: column;
+            }
+            
+            .recipe-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="back-link">
+            <a href="{% url 'users:dashboard' %}">← Back to Dashboard</a>
+        </div>
+        <h1>Recipe Database Search (RAG)</h1>
+        <div class="stats">
+            Total recipes: {{ total_recipes }} | 
+            Recipes with embeddings: {{ recipes_with_embeddings }} | 
+            RAG enabled: {% if rag_enabled %}✅ Yes{% else %}❌ No{% endif %}
+        </div>
+    </div>
+
+    <div class="rag-search-container">
+        {% if rag_enabled %}
+        <div class="rag-status">
+            <h3>🤖 RAG System Active</h3>
+            <p>Vector similarity search is enabled. You can use semantic search to find recipes based on ingredients, cooking methods, or cuisine preferences.</p>
+        </div>
+
+        <div class="rag-actions">
+            <a href="{% url 'diet:rag_recipe_recommendations' %}" class="rag-button">
+                🎯 Get AI Recommendations
+            </a>
+        </div>
+        {% else %}
+        <div class="rag-status" style="background: #f8d7da; border-left-color: #dc3545;">
+            <h3>⚠️ RAG System Not Ready</h3>
+            <p>Vector embeddings need to be generated. Run the management command: <code>python manage.py generate_embeddings</code></p>
+        </div>
+        {% endif %}
+
+        <form method="GET" class="search-form">
+            <div class="search-row">
+                <input type="text" name="query" value="{{ query }}" placeholder="Search recipes by name, ingredients, or cooking method..." class="search-input">
+                <button type="submit" class="search-button">Search</button>
+            </div>
+
+            {% if rag_enabled %}
+            <div class="search-options">
+                <div class="search-type">
+                    <input type="checkbox" name="vector" value="true" {% if use_vector_search %}checked{% endif %} id="vector-search">
+                    <label for="vector-search">Use AI-powered semantic search (recommended)</label>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="filters">
+                <select name="category" class="filter-select">
+                    <option value="">All Categories</option>
+                    {% for category in categories %}
+                    <option value="{{ category }}" {% if category == selected_category %}selected{% endif %}>{{ category }}</option>
+                    {% endfor %}
+                </select>
+
+                <select name="area" class="filter-select">
+                    <option value="">All Areas</option>
+                    {% for area in areas %}
+                    <option value="{{ area }}" {% if area == selected_area %}selected{% endif %}>{{ area }}</option>
+                    {% endfor %}
+                </select>
+
+                <select name="dietary" class="filter-select">
+                    <option value="">All Dietary</option>
+                    <option value="vegetarian" {% if selected_dietary == 'vegetarian' %}selected{% endif %}>Vegetarian</option>
+                    <option value="vegan" {% if selected_dietary == 'vegan' %}selected{% endif %}>Vegan</option>
+                    <option value="meat" {% if selected_dietary == 'meat' %}selected{% endif %}>Meat</option>
+                    <option value="seafood" {% if selected_dietary == 'seafood' %}selected{% endif %}>Seafood</option>
+                    <option value="dairy" {% if selected_dietary == 'dairy' %}selected{% endif %}>Dairy</option>
+                    <option value="carbs" {% if selected_dietary == 'carbs' %}selected{% endif %}>Carbs</option>
+                    <option value="vegetables" {% if selected_dietary == 'vegetables' %}selected{% endif %}>Vegetables</option>
+                </select>
+            </div>
+        </form>
+
+        {% if query and use_vector_search and rag_enabled %}
+        <div class="search-info">
+            🔍 Using AI-powered semantic search for: "{{ query }}"
+        </div>
+        {% elif query %}
+        <div class="search-info">
+            🔍 Using text search for: "{{ query }}"
+        </div>
+        {% endif %}
+
+        {% if recipes %}
+        <div class="recipe-grid">
+            {% for recipe in recipes %}
+            <div class="recipe-card">
+                <div class="recipe-image">
+                    {% if recipe.meal_thumb %}
+                    <img src="{{ recipe.meal_thumb }}" alt="{{ recipe.meal_name }}">
+                    {% else %}
+                    <div class="no-image">No Image</div>
+                    {% endif %}
+                </div>
+                
+                <div class="recipe-content">
+                    <h3 class="recipe-title">{{ recipe.meal_name }}</h3>
+                    
+                    <div class="recipe-meta">
+                        {% if recipe.category %}
+                        <span class="category">{{ recipe.category }}</span>
+                        {% endif %}
+                        {% if recipe.area %}
+                        <span class="area">{{ recipe.area }}</span>
+                        {% endif %}
+                        {% if recipe.id in similarity_scores %}
+                        <span class="similarity-score">🎯 {{ similarity_scores|get_item:recipe.id }}</span>
+                        {% endif %}
+                    </div>
+                    
+                    {% if recipe.search_tags %}
+                    <div class="recipe-tags">
+                        {% for tag in recipe.search_tags|slice:":5" %}
+                        <span class="tag">{{ tag }}</span>
+                        {% endfor %}
+                        {% if recipe.search_tags|length > 5 %}
+                        <span class="tag">+{{ recipe.search_tags|length|add:"-5" }} more</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="recipe-actions">
+                        <a href="{% url 'diet:rag_recipe_details' recipe.id %}" class="btn-details">View Details</a>
+                        <button class="btn-save save-rag-recipe-btn" data-recipe-id="{{ recipe.id }}">Save to My Meals</button>
+                    </div>
+                    <div class="save-status" id="save-status-{{ recipe.id }}" style="margin-top: 5px; font-size: 0.9em; font-weight: bold;"></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% elif query %}
+        <div class="no-results">
+            <h3>No recipes found</h3>
+            <p>Try adjusting your search terms or filters.</p>
+        </div>
+        {% else %}
+        <div class="no-results">
+            <h3>Ready to search</h3>
+            <p>Enter a search term above to find recipes.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const saveButtons = document.querySelectorAll('.save-rag-recipe-btn');
+
+        saveButtons.forEach(btn => {
+            btn.addEventListener('click', function(event) {
+                event.preventDefault(); // Stop any default action
+                const recipeId = this.getAttribute('data-recipe-id');
+                const statusDiv = document.getElementById(`save-status-${recipeId}`);
+
+                // Prevent multiple clicks
+                if (this.disabled) return;
+
+                statusDiv.textContent = 'Saving...';
+                statusDiv.style.color = '#333';
+                this.disabled = true;
+
+                fetch(`/diet/save-rag-recipe/${recipeId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json'
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        statusDiv.textContent = 'Saved!';
+                        statusDiv.style.color = 'green';
+                        this.textContent = 'Saved!';
+                    } else if (data.status === 'exists') {
+                        statusDiv.textContent = 'Already saved.';
+                        statusDiv.style.color = 'blue';
+                        this.textContent = 'Already Saved';
+                    } else {
+                        statusDiv.textContent = 'Error: ' + data.message;
+                        statusDiv.style.color = 'red';
+                        this.disabled = false; // Allow retry
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    statusDiv.textContent = 'An unexpected error occurred.';
+                    statusDiv.style.color = 'red';
+                    this.disabled = false; // Allow retry
+                });
+            });
+        });
+    });
+    </script>
+</body>
+</html> 

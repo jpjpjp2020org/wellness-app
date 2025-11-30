@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Adjust and Finalize Shopping List</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: Arial, sans-serif; background: #f8f9fa; margin: 0; padding: 0; }
+        .container { max-width: 900px; margin: 30px auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); padding: 32px; }
+        h1 { margin-top: 0; }
+        .button { background: #228be6; color: #fff; border: none; border-radius: 5px; padding: 8px 18px; font-size: 1em; cursor: pointer; transition: background 0.2s; }
+        .button.primary { background: #51cf66; }
+        .button.outline { background: #fff; color: #228be6; border: 1px solid #228be6; }
+        .button:hover { background: #1971c2; }
+        .table { width: 100%; border-collapse: collapse; margin-top: 18px; }
+        .table th, .table td { border: 1px solid #dee2e6; padding: 8px; text-align: left; }
+        .table th { background: #e9ecef; }
+        #version-modal { box-shadow: 0 4px 24px rgba(0,0,0,0.18); }
+        @media (max-width: 600px) { .container { padding: 8px; } }
+    </style>
+</head>
+<body>
+<div class="container">
+<h1>Adjust and Finalize Shopping List</h1>
+<div style="margin-bottom: 18px;">
+    <a href="{% url 'diet:shopping_list' %}" class="button outline">← Back to Shopping List</a>
+</div>
+
+<div id="adjust-list-app">
+    <form id="shopping-list-form" onsubmit="return false;">
+        <table class="table" style="width: 100%;">
+            <thead>
+                <tr>
+                    <th>Have?</th>
+                    <th>Ingredient</th>
+                    <th>Quantity</th>
+                    <th>Unit</th>
+                    <th>Remove</th>
+                </tr>
+            </thead>
+            <tbody id="shopping-list-body">
+                {% for item in shopping_list %}
+                <tr>
+                    <td><input type="checkbox" class="have-checkbox"></td>
+                    <td><input type="text" class="ingredient-name" value="{{ item.name }}"></td>
+                    <td><input type="number" class="ingredient-qty" value="{{ item.quantity }}" min="0.01" step="0.01"></td>
+                    <td><input type="text" class="ingredient-unit" value="{{ item.unit }}"></td>
+                    <td><button type="button" class="remove-btn">Remove</button></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <button type="button" id="add-item-btn" class="button">+ Add Item</button>
+        <div style="margin-top: 18px;">
+            <input type="text" id="list-name" placeholder="List name (optional)" style="margin-right: 8px;">
+            <input type="text" id="list-notes" placeholder="Notes (optional)" style="margin-right: 8px;">
+            <button type="button" id="save-list-btn" class="button primary">Save Shopping List Version</button>
+        </div>
+    </form>
+    <div style="margin-top: 32px;">
+        <h3>Previous Shopping List Versions</h3>
+        <select id="version-dropdown">
+            <option value="">Select a version...</option>
+            {% for v in versions %}
+            <option value="{{ v.id }}">{{ v.name|default:'(no name)' }} - {{ v.created_at|date:'Y-m-d H:i' }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+
+<!-- Modal for viewing previous version -->
+<div id="version-modal" style="display:none; position:fixed; top:10%; left:50%; transform:translateX(-50%); background:#fff; border:1px solid #ccc; border-radius:8px; padding:24px; z-index:1000; min-width:320px; width:80vw; max-width:80vw;">
+    <button onclick="closeModal()" class="button" style="position:absolute; top:12px; right:18px; background:#e03131; color:#fff; border:none; border-radius:50%; width:32px; height:32px; font-size:1.2em; line-height:1;">&times;</button>
+    <div id="modal-content" style="max-height:60vh; overflow-y:auto;"></div>
+    <button onclick="closeModal()" class="button" style="margin-top:12px;">Close</button>
+</div>
+<div id="modal-backdrop" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.2); z-index:999;"></div>
+
+<script>
+function getListData() {
+    const rows = document.querySelectorAll('#shopping-list-body tr');
+    let items = [];
+    rows.forEach(row => {
+        const have = row.querySelector('.have-checkbox').checked;
+        const name = row.querySelector('.ingredient-name').value;
+        const qty = parseFloat(row.querySelector('.ingredient-qty').value);
+        const unit = row.querySelector('.ingredient-unit').value;
+        if (name && qty > 0) {
+            items.push({ name, quantity: qty, unit, have });
+        }
+    });
+    return items;
+}
+
+document.getElementById('add-item-btn').onclick = function() {
+    const tbody = document.getElementById('shopping-list-body');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><input type="checkbox" class="have-checkbox"></td>
+        <td><input type="text" class="ingredient-name"></td>
+        <td><input type="number" class="ingredient-qty" min="0.01" step="0.01"></td>
+        <td><input type="text" class="ingredient-unit"></td>
+        <td><button type="button" class="remove-btn">Remove</button></td>`;
+    tbody.appendChild(tr);
+};
+
+document.getElementById('shopping-list-body').onclick = function(e) {
+    if (e.target.classList.contains('remove-btn')) {
+        e.target.closest('tr').remove();
+    }
+};
+
+document.getElementById('save-list-btn').onclick = function() {
+    const items = getListData();
+    const name = document.getElementById('list-name').value;
+    const notes = document.getElementById('list-notes').value;
+    fetch('{% url 'diet:save_shopping_list_version' %}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+        body: JSON.stringify({ name, notes, items })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert('Shopping list version saved! Reload page to see in dropdown.');
+        } else {
+            alert('Error saving list.');
+        }
+    });
+};
+
+document.getElementById('version-dropdown').onchange = function() {
+    const versionId = this.value;
+    if (!versionId) return;
+    fetch(`/diet/shopping-list/version/${versionId}/`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Separate items: need to buy (have==false) first, then have==true
+                const needItems = data.items.filter(item => !item.have);
+                const haveItems = data.items.filter(item => item.have);
+                let html = `<h4>${data.name || '(no name)'}</h4><div><em>${data.created_at}</em></div><div>${data.notes || ''}</div><div style='max-height:50vh; overflow-y:auto;'><table class='table' style='margin-top:12px;'><thead><tr><th>Have?</th><th>Ingredient</th><th>Quantity</th><th>Unit</th></tr></thead><tbody>`;
+                needItems.forEach(item => {
+                    html += `<tr><td>${item.have ? '✔️' : ''}</td><td>${item.name}</td><td>${item.quantity}</td><td>${item.unit}</td></tr>`;
+                });
+                if (haveItems.length > 0) {
+                    html += `<tr><td colspan='4' style='background:#f8f9fa; text-align:center; font-size:0.95em; color:#888;'>Items you already have</td></tr>`;
+                    haveItems.forEach(item => {
+                        html += `<tr style='opacity:0.7;'><td>${item.have ? '✔️' : ''}</td><td>${item.name}</td><td>${item.quantity}</td><td>${item.unit}</td></tr>`;
+                    });
+                }
+                html += '</tbody></table></div>';
+                document.getElementById('modal-content').innerHTML = html;
+                document.getElementById('version-modal').style.display = 'block';
+                document.getElementById('modal-backdrop').style.display = 'block';
+            } else {
+                alert('Could not load version.');
+            }
+        });
+};
+
+function closeModal() {
+    document.getElementById('version-modal').style.display = 'none';
+    document.getElementById('modal-backdrop').style.display = 'none';
+}
+</script>
+</div>
+</body>
+</html> 

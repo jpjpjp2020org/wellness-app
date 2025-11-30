@@ -1,0 +1,295 @@
+{% load static %}
+<!-- Chart.js content delivery network (CDN) and activity gprah needs the date time adapter -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0"></script>
+
+<div class="health-container">
+    <h2>Health Profile</h2>
+    <p><a href="{% url 'users:dashboard' %}" class="button">Return to Dashboard</a></p>
+
+    <div class="tips-section">
+        <p><strong>Tips:</strong></p>
+        <ol>
+            <li>Please mention any dietary or physical restrictions clearly (e.g., "no gluten", "low sodium", "bad knee for running"). AI will consider these when generating your recommendation. You can find the form in the bottom of the page.</li>
+            <li>If you feel that responses are off for your conidtion or goals, describe more details and try again. Of course, talk to a real professional as well - it is still only AI and AI is based on available data, not necessarily proferssional education.</li>
+            <li>As people might not know their specific goals, feel free to initially share your info in a general manner - AI will give you a general assessment.</li>
+            <li>After that you can go to Goal Setting & Tracking and use the General Assesment for more detaild plans and recomendations.</li>
+        </ol>
+    </div>
+
+    <div class="profile-info">
+        <div class="info-item"><strong>Height:</strong> {{ profile.height_cm }} cm</div>
+        <div class="info-item"><strong>Weight:</strong> {{ profile.weight_kg }} kg</div>
+        <div class="info-item"><strong>Lifestyle:</strong> {{ profile.lifestyle }}</div>
+        <div class="info-item"><strong>Goals:</strong> {{ profile.fitness_goals }}</div>
+        <div class="info-item"><strong>Diet:</strong> {{ profile.dietary_preferences }}</div>
+        <div class="info-item"><strong>BMI:</strong> {{ profile.bmi|floatformat:2 }}</div>
+        <div class="info-item"><strong>Classification:</strong> {{ profile.bmi_classification }}</div>
+        <div class="info-item"><strong>Wellness Score (base 100):</strong> {{ score }}</div>
+        {% if adjusted_wellness_score %}
+        <div class="info-item" style="color: #099268;"><strong>Nutrition-Adjusted Wellness Score:</strong> {{ adjusted_wellness_score }} <span style="font-size: 0.9em; color: #868e96;">(Base: {{ base_wellness_score }}, Ratio: {{ adherence_ratio }})</span></div>
+        <div class="info-item" style="font-size: 0.95em; color: #868e96; margin-top: -6px;">
+            <em>This score is adjusted for your recent nutrition adherence from your 7-day meal plan.</em>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="ai-section">
+        <h3>AI-Inferred Categories:</h3>
+        {% if profile.assessment_data %}
+            {% with profile.assessment_data as ai %}
+                <div class="info-item"><strong>Lifestyle:</strong> {{ ai.lifestyle_category|default:"(not set)" }}</div>
+                <div class="info-item"><strong>Diet:</strong> {{ ai.diet_category|default:"(not set)" }}</div>
+                <div class="info-item"><strong>Goal:</strong> {{ ai.goal_category|default:"(not set)" }}</div>
+                <div class="info-item small"><em>(Raw test values):</em> {{ ai }}</div>
+            {% endwith %}
+        {% else %}
+            <p>AI summary not yet available.</p>
+        {% endif %}
+    </div>
+
+    <div class="assessment-section">
+        <h3>AI Health General Assesment:</h3>
+        {% if insight %}
+            <p>{{ insight.content }}</p>
+        {% else %}
+            <p>No recommendation available yet.</p>
+        {% endif %}
+
+        {% if profile.assessment_data %}
+            <p><a href="{% url 'health:goals_tracking' %}" class="button">Your weight goals and specific training info</a></p>
+        {% else %}
+            <p><em>Please complete your health profile to access goal tracking.</em></p>
+        {% endif %}
+    </div>
+
+    <div class="charts-section">
+        <div class="chart-container">
+            <h3>Wellness Score Chart</h3>
+            <canvas id="scoreChart" width="400" height="200"></canvas>
+            {{ score_chart_json|json_script:"score-data" }}
+        </div>
+
+        <div class="chart-container">
+            <h3>Weight Tracking Chart</h3>
+            <canvas id="weightChart" width="400" height="200"></canvas>
+            {{ weight_chart_json|json_script:"weight-data" }}
+        </div>
+
+        <div class="chart-container">
+            <h3>Daily Activity Tracking</h3>
+            <canvas id="activityChart" width="400" height="200"></canvas>
+            {{ activity_chart_json|json_script:"activity-data" }}
+        </div>
+    </div>
+
+    {{ goal_weight|json_script:"goal-weight" }}
+    {{ target_date|json_script:"target-date" }}
+    {{ start_date|json_script:"start-date" }}
+    {{ start_weight|json_script:"start-weight" }}
+
+    {% if progress_summary %}
+        <div class="progress-section">
+            <h3>Progress Summary</h3>
+            <table class="progress-table">
+                <tr>
+                    <th>Start Weight</th>
+                    <td>{{ progress_summary.start_weight }} kg</td>
+                </tr>
+                <tr>
+                    <th>Current Weight</th>
+                    <td>{{ progress_summary.current_weight }} kg</td>
+                </tr>
+                <tr>
+                    <th>Goal Weight</th>
+                    <td>{{ progress_summary.goal_weight }} kg</td>
+                </tr>
+                <tr>
+                    <th>Weekly Goal (Target Change)</th>
+                    <td>{{ progress_summary.weekly_goal_delta }} kg</td>
+                </tr>
+                <tr>
+                    <th>Actual Change Since {{ progress_summary.weekly_start|date:"M d" }}</th>
+                    <td>
+                        {% if progress_summary.weekly_actual_delta != None %}
+                            {{ progress_summary.weekly_actual_delta }} kg
+                        {% else %}
+                            No data
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>Monthly Goal (Target Change)</th>
+                    <td>{{ progress_summary.monthly_goal_delta }} kg</td>
+                </tr>
+                <tr>
+                    <th>Actual Change Since {{ progress_summary.monthly_start|date:"M d" }}</th>
+                    <td>
+                        {% if progress_summary.monthly_actual_delta != None %}
+                            {{ progress_summary.monthly_actual_delta }} kg
+                        {% else %}
+                            No data
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>Days Remaining</th>
+                    <td>{{ progress_summary.days_left }}</td>
+                </tr>
+            </table>
+        </div>
+    {% else %}
+        <p><em>No progress summary available yet. Please update your profile and goal data.</em></p>
+    {% endif %}
+
+    <p><a href="{% url 'health:export_health_data' %}" class="button" download>Download my health data (JSON)</a></p>
+
+    <div class="form-section">
+        <p class="warning"><strong>NB! Make sure not to input Personal information like email or name or address etc!</strong></p>
+        <p class="warning"><strong>And keep in mind that AI can hallucinate - use common sense.</strong></p>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="button primary">Save</button>
+        </form>
+    </div>
+</div>
+
+<style>
+    .health-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    h2, h3 {
+        color: #333;
+        margin: 20px 0;
+    }
+
+    .tips-section {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 4px;
+        margin: 20px 0;
+    }
+
+    .tips-section ol {
+        margin-left: 20px;
+        padding-left: 0;
+    }
+
+    .tips-section li {
+        margin-bottom: 10px;
+        color: #666;
+    }
+
+    .profile-info, .ai-section {
+        background: white;
+        padding: 20px;
+        border-radius: 4px;
+        margin: 20px 0;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .info-item {
+        margin: 10px 0;
+        color: #444;
+    }
+
+    .info-item.small {
+        font-size: 0.9em;
+        color: #666;
+    }
+
+    .chart-container {
+        background: white;
+        padding: 20px;
+        border-radius: 4px;
+        margin: 20px 0;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .progress-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+    }
+
+    .progress-table th, .progress-table td {
+        padding: 10px;
+        border: 1px solid #ddd;
+        text-align: left;
+    }
+
+    .progress-table th {
+        background: #f8f9fa;
+        color: #333;
+    }
+
+    .button {
+        display: inline-block;
+        padding: 8px 16px;
+        background: #fff;
+        color: #333;
+        text-decoration: none;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        margin: 5px;
+        transition: all 0.2s ease;
+    }
+
+    .button:hover {
+        background: #f8f9fa;
+        border-color: #ccc;
+    }
+
+    .button.primary {
+        background: #007bff;
+        color: white;
+        border-color: #0056b3;
+    }
+
+    .button.primary:hover {
+        background: #0056b3;
+    }
+
+    .warning {
+        color: #721c24;
+        background: #f8d7da;
+        padding: 10px;
+        border-radius: 4px;
+        margin: 10px 0;
+    }
+
+    .form-section {
+        background: white;
+        padding: 20px;
+        border-radius: 4px;
+        margin: 20px 0;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    form p {
+        margin: 15px 0;
+    }
+
+    form input[type="text"],
+    form input[type="number"],
+    form textarea,
+    form select {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        margin-top: 5px;
+    }
+
+    form label {
+        color: #444;
+        display: block;
+        margin-bottom: 5px;
+    }
+</style>
+
+<script src="{% static 'js/chart_helpers.js' %}"></script>

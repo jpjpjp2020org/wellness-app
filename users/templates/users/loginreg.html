@@ -1,0 +1,75 @@
+{% load socialaccount %}
+<div class="login-container">
+    <h1>Well well well... Wellness</h1>
+
+    <div class="auth-buttons">
+        <a href="{% url 'account_login' %}" class="button">Login</a>
+        <a href="{% url 'account_signup' %}" class="button">Register</a>
+    </div>
+
+    <div class="social-auth">
+        <h3>Or sign in with:</h3>
+        <div class="social-buttons">
+            <a href="{% provider_login_url 'google' %}" class="button social-button">Login with Google</a>
+            <a href="{% provider_login_url 'github' %}" class="button social-button">Login with GitHub</a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .login-container {
+        max-width: 400px;
+        margin: 40px auto;
+        padding: 20px;
+        text-align: center;
+    }
+
+    h1 {
+        color: #333;
+        margin-bottom: 30px;
+        font-size: 28px;
+    }
+
+    .auth-buttons {
+        margin: 20px 0;
+    }
+
+    .social-auth {
+        margin-top: 30px;
+    }
+
+    h3 {
+        color: #666;
+        font-size: 18px;
+        margin-bottom: 15px;
+    }
+
+    .button {
+        display: inline-block;
+        padding: 10px 20px;
+        margin: 5px;
+        background-color: #fff;
+        color: #333;
+        text-decoration: none;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+    }
+
+    .button:hover {
+        background-color: #f8f9fa;
+        border-color: #ccc;
+    }
+
+    .social-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .social-button {
+        width: 200px;
+        text-align: center;
+    }
+</style>

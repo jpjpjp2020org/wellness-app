@@ -1,0 +1,590 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Assistant - Data Warehouse</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f8f9fa;
+            color: #333;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            margin: 0;
+            color: #2c3e50;
+        }
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .summary-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .summary-card h3 {
+            margin: 0 0 10px 0;
+            color: #6c757d;
+            font-size: 0.9em;
+            text-transform: uppercase;
+        }
+        .summary-card .value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .charts-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .chart-container h3 {
+            margin: 0 0 15px 0;
+            color: #2c3e50;
+        }
+        .data-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .data-section h3 {
+            margin: 0 0 15px 0;
+            color: #2c3e50;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 10px;
+        }
+        .data-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .data-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #007bff;
+        }
+        .data-item h4 {
+            margin: 0 0 8px 0;
+            color: #495057;
+            font-size: 0.9em;
+        }
+        .data-item .value {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .meal-plan-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .meal-day {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+        }
+        .meal-day h4 {
+            margin: 0 0 10px 0;
+            color: #495057;
+            font-size: 0.9em;
+        }
+        .meal-slot {
+            margin-bottom: 8px;
+            padding: 5px;
+            background: white;
+            border-radius: 4px;
+            font-size: 0.8em;
+        }
+        .meal-slot .meal-name {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .meal-slot .calories {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+        .json-dump {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8em;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-success { background: #28a745; }
+        .status-error { background: #dc3545; }
+        .status-warning { background: #ffc107; }
+        @media (max-width: 768px) {
+            .charts-section, .data-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 AI Assistant Data Warehouse</h1>
+            <p>Comprehensive user data collection and visualization for AI context</p>
+        </div>
+
+        <div class="header">
+            <a href="{% url 'analytics:diet_analytics_playground' %}" style="color:#845ef7;">Diet data playground</a>
+        </div>
+
+        <!-- Summary Statistics -->
+        <div class="summary-cards">
+            <div class="summary-card">
+                <h3>Saved Meals</h3>
+                <div class="value">{{ summary_stats.total_saved_meals }}</div>
+            </div>
+            <div class="summary-card">
+                <h3>Planned Meals</h3>
+                <div class="value">{{ summary_stats.planned_meals_count }}</div>
+            </div>
+            <div class="summary-card">
+                <h3>Wellness Score</h3>
+                <div class="value">{{ summary_stats.current_wellness_score }}</div>
+            </div>
+            <div class="summary-card">
+                <h3>Nutrition Adherence</h3>
+                <div class="value">{{ summary_stats.nutrition_adherence|floatformat:2 }}</div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-section">
+            {% if chart_data.weight_labels %}
+            <div class="chart-container">
+                <h3>Weight Trend</h3>
+                <canvas id="weightChart"></canvas>
+            </div>
+            {% endif %}
+            
+            {% if chart_data.wellness_labels %}
+            <div class="chart-container">
+                <h3>Wellness Score Trend</h3>
+                <canvas id="wellnessChart"></canvas>
+            </div>
+            {% endif %}
+            
+            {% if chart_data.diet_labels %}
+            <div class="chart-container">
+                <h3>Daily Calories (7-Day Plan)</h3>
+                <canvas id="caloriesChart"></canvas>
+            </div>
+            {% endif %}
+            
+            {% if chart_data.diet_labels %}
+            <div class="chart-container">
+                <h3>Macronutrient Breakdown</h3>
+                <canvas id="macrosChart"></canvas>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Health Data Section -->
+        <div class="data-section">
+            <h3>🏥 Health Profile Data</h3>
+            {% if health_data.error %}
+                <div class="data-item">
+                    <span class="status-indicator status-error"></span>
+                    <strong>Error:</strong> {{ health_data.error }}
+                </div>
+            {% else %}
+                <div class="data-grid">
+                    <div class="data-item">
+                        <h4>Current Weight</h4>
+                        <div class="value">{{ health_data.profile.weight_kg|floatformat:1 }} kg</div>
+                    </div>
+                    <div class="data-item">
+                        <h4>BMI</h4>
+                        <div class="value">{{ health_data.profile.bmi|floatformat:1 }}</div>
+                    </div>
+                    <div class="data-item">
+                        <h4>Wellness Score</h4>
+                        <div class="value">{{ health_data.profile.wellness_score }}</div>
+                    </div>
+                    <div class="data-item">
+                        <h4>Lifestyle</h4>
+                        <div class="value">{{ health_data.profile.lifestyle }}</div>
+                    </div>
+                    {% if health_data.trends.weight_trend %}
+                    <div class="data-item">
+                        <h4>Weight Change</h4>
+                        <div class="value">{{ health_data.trends.weight_trend.change|floatformat:1 }} kg ({{ health_data.trends.weight_trend.trend_direction }})</div>
+                    </div>
+                    {% endif %}
+                    {% if health_data.trends.goal_progress %}
+                    <div class="data-item">
+                        <h4>Goal Progress</h4>
+                        <div class="value">{{ health_data.trends.goal_progress.progress_percentage|floatformat:1 }}%</div>
+                    </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Diet Data Section -->
+        <div class="data-section">
+            <h3>🍽️ Nutrition & Meal Planning Data</h3>
+            {% if diet_data.error %}
+                <div class="data-item">
+                    <span class="status-indicator status-error"></span>
+                    <strong>Error:</strong> {{ diet_data.error }}
+                </div>
+            {% else %}
+                <div class="data-grid">
+                    <div class="data-item">
+                        <h4>Daily Calorie Target</h4>
+                        <div class="value">
+                            {% if diet_data.key_metrics and diet_data.key_metrics.daily_calorie_target %}
+                                {{ diet_data.key_metrics.daily_calorie_target }} kcal
+                            {% elif diet_data.targets and diet_data.targets.calories %}
+                                {{ diet_data.targets.calories }} kcal
+                            {% else %}
+                                None kcal
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="data-item">
+                        <h4>Protein Target</h4>
+                        <div class="value">
+                            {% if diet_data.key_metrics and diet_data.key_metrics.protein_target %}
+                                {{ diet_data.key_metrics.protein_target }}g
+                            {% elif diet_data.targets and diet_data.targets.protein %}
+                                {{ diet_data.targets.protein }}g
+                            {% else %}
+                                Noneg
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="data-item">
+                        <h4>Current Week Calories</h4>
+                        <div class="value">{{ diet_data.nutrition_adherence.current_week_calories|floatformat:0 }} kcal</div>
+                    </div>
+                    <div class="data-item">
+                        <h4>Days with Meals</h4>
+                        <div class="value">{{ diet_data.nutrition_adherence.days_with_meals }}/7</div>
+                    </div>
+                    <div class="data-item">
+                        <h4>Adherence Ratio</h4>
+                        <div class="value">{{ diet_data.nutrition_adherence.ratio|floatformat:2 }}</div>
+                    </div>
+                    <div class="data-item">
+                        <h4>Adjusted Wellness Score</h4>
+                        <div class="value">{{ diet_data.nutrition_adherence.adjusted_wellness_score }}</div>
+                    </div>
+                </div>
+
+                <!-- 7-Day Meal Plan -->
+                {% if diet_data.current_plan.daily_totals %}
+                <h4 style="margin-top: 20px; color: #495057;">7-Day Meal Plan Overview</h4>
+                <div class="meal-plan-grid">
+                    {% for date, day_data in diet_data.current_plan.daily_totals.items %}
+                    <div class="meal-day">
+                        <h4>{{ date }}</h4>
+                        <div style="margin-bottom: 10px; font-weight: bold; color: #2c3e50;">
+                            {{ day_data.calories|floatformat:0 }} kcal
+                        </div>
+                        {% for meal in day_data.meals %}
+                        <div class="meal-slot">
+                            <div class="meal-name">{{ meal.meal_type|title }}</div>
+                            {% if meal.meal_name %}
+                            <div style="color: #6c757d; font-size: 0.8em;">{{ meal.meal_name|truncatechars:20 }}</div>
+                            {% endif %}
+                            <div class="calories">{{ meal.calories|floatformat:0 }} kcal</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            {% endif %}
+        </div>
+
+        <!-- Historical Data Section -->
+        <div class="data-section">
+            <h3>📊 Historical Data</h3>
+            <div class="data-grid">
+                <div class="data-item">
+                    <h4>Meal Plan Versions</h4>
+                    <div class="value">{{ diet_data.history.meal_plan_versions|length }} saved</div>
+                </div>
+                <div class="data-item">
+                    <h4>Shopping List Versions</h4>
+                    <div class="value">{{ diet_data.history.shopping_list_versions|length }} saved</div>
+                </div>
+                <div class="data-item">
+                    <h4>Weight History Entries</h4>
+                    <div class="value">{{ health_data.history.weight_history|length }} records</div>
+                </div>
+                <div class="data-item">
+                    <h4>Wellness Score History</h4>
+                    <div class="value">{{ health_data.history.score_history|length }} records</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Raw Data Dump (Collapsible) -->
+        <div class="data-section">
+            <h3>🔍 Raw Data Dump (For AI Context)</h3>
+            <details>
+                <summary>Click to expand raw JSON data</summary>
+                <div class="json-dump">{{ data_dump }}</div>
+            </details>
+        </div>
+
+        <!-- AI Chatbox Section -->
+        <div id="ai-chatbox-section" style="position:relative; margin-top:40px;">
+            <div style="background:white; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.1); padding:20px; max-width:600px; margin:0 auto;">
+                <h2 style="margin-top:0; color:#2c3e50;">💬 AI Assistant Chat</h2>
+                <div id="chat-history" style="min-height:120px; max-height:300px; overflow-y:auto; background:#f8f9fa; border:1px solid #e9ecef; border-radius:6px; padding:12px; font-size:1em; margin-bottom:12px;"></div>
+                <form id="chat-form" style="display:flex; gap:8px;">
+                    <input id="chat-input" type="text" placeholder="Type your question..." autocomplete="off" style="flex:1; padding:10px; border-radius:6px; border:1px solid #ccc; font-size:1em;" required />
+                    <button type="submit" style="background:#845ef7; color:#fff; border:none; border-radius:6px; padding:10px 18px; font-size:1em; cursor:pointer;">Send</button>
+                </form>
+                <div id="chat-loading" style="display:none; color:#845ef7; margin-top:8px;">Thinking...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize charts
+        document.addEventListener('DOMContentLoaded', function() {
+            {% if chart_data.weight_labels %}
+            // Weight Chart
+            new Chart(document.getElementById('weightChart'), {
+                type: 'line',
+                data: {
+                    labels: {{ chart_data.weight_labels|safe }},
+                    datasets: [{
+                        label: 'Weight (kg)',
+                        data: {{ chart_data.weight_values|safe }},
+                        borderColor: '#007bff',
+                        backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: { display: true, text: 'Weight Trend' }
+                    },
+                    scales: {
+                        y: { beginAtZero: false }
+                    }
+                }
+            });
+            {% endif %}
+
+            {% if chart_data.wellness_labels %}
+            // Wellness Chart
+            new Chart(document.getElementById('wellnessChart'), {
+                type: 'line',
+                data: {
+                    labels: {{ chart_data.wellness_labels|safe }},
+                    datasets: [{
+                        label: 'Wellness Score',
+                        data: {{ chart_data.wellness_values|safe }},
+                        borderColor: '#28a745',
+                        backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: { display: true, text: 'Wellness Score Trend' }
+                    },
+                    scales: {
+                        y: { beginAtZero: false }
+                    }
+                }
+            });
+            {% endif %}
+
+            {% if chart_data.diet_labels %}
+            // Calories Chart
+            new Chart(document.getElementById('caloriesChart'), {
+                type: 'bar',
+                data: {
+                    labels: {{ chart_data.diet_labels|safe }},
+                    datasets: [{
+                        label: 'Calories',
+                        data: {{ chart_data.diet_calories|safe }},
+                        backgroundColor: '#ffc107',
+                        borderColor: '#e0a800',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: { display: true, text: 'Daily Calories' }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+
+            // Macros Chart
+            new Chart(document.getElementById('macrosChart'), {
+                type: 'bar',
+                data: {
+                    labels: {{ chart_data.diet_labels|safe }},
+                    datasets: [
+                        {
+                            label: 'Protein',
+                            data: {{ chart_data.diet_protein|safe }},
+                            backgroundColor: '#007bff'
+                        },
+                        {
+                            label: 'Carbs',
+                            data: {{ chart_data.diet_carbs|safe }},
+                            backgroundColor: '#28a745'
+                        },
+                        {
+                            label: 'Fat',
+                            data: {{ chart_data.diet_fat|safe }},
+                            backgroundColor: '#dc3545'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: { display: true, text: 'Macronutrients' }
+                    },
+                    scales: {
+                        x: { stacked: true },
+                        y: { stacked: true, beginAtZero: true }
+                    }
+                }
+            });
+            {% endif %}
+        });
+
+        // AI Chatbox logic
+        const chatForm = document.getElementById('chat-form');
+        const chatInput = document.getElementById('chat-input');
+        const chatHistory = document.getElementById('chat-history');
+        const chatLoading = document.getElementById('chat-loading');
+
+        function renderChatHistory(history) {
+            chatHistory.innerHTML = '';
+            if (!history || history.length === 0) {
+                chatHistory.innerHTML = '<div style="color:#aaa;">No conversation yet. Ask me anything about your health or nutrition!</div>';
+                return;
+            }
+            history.forEach(turn => {
+                if (turn.user) {
+                    chatHistory.innerHTML += `<div style='margin-bottom:6px;'><b style='color:#845ef7;'>You:</b> ${turn.user}</div>`;
+                }
+                if (turn.assistant) {
+                    chatHistory.innerHTML += `<div style='margin-bottom:12px;'><b style='color:#2c3e50;'>Assistant:</b> ${turn.assistant}</div>`;
+                }
+            });
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+
+        async function fetchChatHistory() {
+            const resp = await fetch(window.location.pathname + 'get_chat_history/');
+            if (resp.ok) {
+                const data = await resp.json();
+                renderChatHistory(data.history);
+            }
+        }
+
+        chatForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const message = chatInput.value.trim();
+            if (!message) return;
+            chatLoading.style.display = 'block';
+            chatInput.disabled = true;
+            try {
+                const resp = await fetch(window.location.pathname + 'chat/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                    body: JSON.stringify({ message })
+                });
+                if (resp.ok) {
+                    const data = await resp.json();
+                    renderChatHistory(data.history);
+                    chatInput.value = '';
+                } else {
+                    alert('Error: Could not get response.');
+                }
+            } catch (err) {
+                alert('Network error.');
+            } finally {
+                chatLoading.style.display = 'none';
+                chatInput.disabled = false;
+                chatInput.focus();
+            }
+        });
+
+        // Helper to get CSRF token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // Initial load
+        fetchChatHistory();
+    </script>
+</body>
+</html> 

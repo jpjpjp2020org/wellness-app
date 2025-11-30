@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ recipe.meal_name }} - Recipe Details</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f5f5f5;
+        }
+        
+        .header {
+            background: white;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .back-link {
+            margin-bottom: 10px;
+        }
+        
+        .back-link a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+        
+        .recipe-details-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .recipe-header {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .recipe-image {
+            height: 300px;
+            overflow: hidden;
+            border-radius: 8px;
+        }
+
+        .recipe-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .no-image {
+            width: 100%;
+            height: 100%;
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .recipe-info h1 {
+            margin: 0 0 15px 0;
+            color: #333;
+            font-size: 2em;
+        }
+
+        .recipe-meta {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .category, .area {
+            background: #f8f9fa;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .recipe-tags {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            background: #e9ecef;
+            color: #495057;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+        }
+
+        .recipe-links {
+            display: flex;
+            gap: 10px;
+        }
+
+        .link-button {
+            padding: 8px 16px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 0.9em;
+            transition: background 0.2s;
+        }
+
+        .youtube {
+            background: #ff0000;
+            color: white;
+        }
+
+        .youtube:hover {
+            background: #cc0000;
+            color: white;
+        }
+
+        .source {
+            background: #6c757d;
+            color: white;
+        }
+
+        .source:hover {
+            background: #545b62;
+            color: white;
+        }
+
+        .recipe-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .ingredients-section, .instructions-section {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .ingredients-section h2, .instructions-section h2 {
+            margin: 0 0 20px 0;
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+
+        .ingredients-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .ingredient-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border-left: 3px solid #007bff;
+        }
+
+        .ingredient-name {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .ingredient-measure {
+            color: #666;
+            font-style: italic;
+        }
+
+        .instructions-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .instruction-step {
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+        }
+
+        .step-number {
+            background: #007bff;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9em;
+            flex-shrink: 0;
+        }
+
+        .step-description {
+            margin: 0;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .rag-info {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+        }
+
+        .rag-info h3 {
+            margin: 0 0 15px 0;
+            color: #333;
+        }
+
+        .rag-info ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .rag-info li {
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 768px) {
+            .recipe-header {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .recipe-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .recipe-image {
+                height: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="back-link">
+            <a href="{% url 'diet:rag_recipe_search' %}">← Back to Recipe Search</a>
+        </div>
+        <h1>{{ recipe.meal_name }}</h1>
+    </div>
+
+    <div class="recipe-details-container">
+        <div class="recipe-header">
+            <div class="recipe-image">
+                {% if recipe.meal_thumb %}
+                    <img src="{{ recipe.meal_thumb }}" alt="{{ recipe.meal_name }}">
+                {% else %}
+                    <div class="no-image">No Image Available</div>
+                {% endif %}
+            </div>
+            
+            <div class="recipe-info">
+                <div class="recipe-meta">
+                    <span class="category">{{ recipe.category }}</span>
+                    <span class="area">{{ recipe.area }}</span>
+                </div>
+                
+                <div class="recipe-tags">
+                    {% for tag in recipe.search_tags %}
+                        <span class="tag">{{ tag }}</span>
+                    {% endfor %}
+                </div>
+                
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    {% if recipe.youtube_link %}
+                        <a href="{{ recipe.youtube_link }}" target="_blank" class="btn-youtube">Watch on YouTube</a>
+                    {% endif %}
+                    {% if recipe.source_link %}
+                        <a href="{{ recipe.source_link }}" target="_blank" class="btn-source">View Source</a>
+                    {% endif %}
+                    <button id="save-rag-recipe-btn" class="btn-save" data-recipe-id="{{ recipe.id }}">Save to My Meals</button>
+                </div>
+                <div id="save-status" style="margin-top: 15px; font-weight: bold;"></div>
+            </div>
+        </div>
+        
+        <div class="recipe-content">
+            <div class="ingredients-section">
+                <h2>Ingredients</h2>
+                <div class="ingredients-list">
+                    {% for ingredient in ingredients %}
+                        <div class="ingredient-item">
+                            <span class="ingredient-name">{{ ingredient.ingredient }}</span>
+                            <span class="ingredient-measure">{{ ingredient.measure }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="instructions-section">
+                <h2>Instructions</h2>
+                <div class="instructions-list">
+                    {% for step in instructions %}
+                        <div class="instruction-step">
+                            <span class="step-number">{{ step.step_number }}</span>
+                            <p class="step-description">{{ step.description }}</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="rag-info">
+            <h3>RAG System Information</h3>
+            <p>This recipe is part of our Retrieval-Augmented Generation (RAG) system, which includes:</p>
+            <ul>
+                <li><strong>Vector Embeddings:</strong> Recipe content is embedded for similarity search</li>
+                <li><strong>Search Tags:</strong> {{ recipe.search_tags|length }} tags for filtering</li>
+                <li><strong>Ingredient Text:</strong> {{ recipe.ingredients_text|length }} characters for search</li>
+                <li><strong>Database ID:</strong> {{ recipe.mealdb_id }} (MealDB)</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const saveBtn = document.getElementById('save-rag-recipe-btn');
+            const statusDiv = document.getElementById('save-status');
+            const recipeId = saveBtn.getAttribute('data-recipe-id');
+
+            saveBtn.addEventListener('click', function() {
+                statusDiv.textContent = 'Saving...';
+                statusDiv.style.color = '#333';
+                saveBtn.disabled = true;
+
+                fetch(`/diet/save-rag-recipe/${recipeId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json'
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        statusDiv.textContent = 'Meal saved successfully!';
+                        statusDiv.style.color = 'green';
+                        saveBtn.textContent = 'Saved!';
+                    } else if (data.status === 'exists') {
+                        statusDiv.textContent = 'You have already saved this meal.';
+                        statusDiv.style.color = 'blue';
+                        saveBtn.textContent = 'Already Saved';
+                    } else {
+                        statusDiv.textContent = 'Error: ' + data.message;
+                        statusDiv.style.color = 'red';
+                        saveBtn.disabled = false; // Allow retry
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    statusDiv.textContent = 'An unexpected error occurred.';
+                    statusDiv.style.color = 'red';
+                    saveBtn.disabled = false; // Allow retry
+                });
+            });
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>7-Day Nutrition Progress</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background-color: #f9f9f9; }
+        h1 { text-align: center; }
+        .charts-container { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
+        .day-chart-container { background-color: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 15px; width: 300px; }
+        .day-header { font-size: 1.2em; font-weight: bold; margin-bottom: 15px; text-align: center; }
+        .chart-wrapper { width: 100%; max-width: 250px; margin: auto; }
+        .no-data { text-align: center; color: #888; }
+    </style>
+</head>
+<body>
+
+    <h1>7-Day Nutrition Progress</h1>
+
+    <div class="charts-container">
+        {% for day in week_days %}
+            <div class="day-chart-container" data-date="{{ day.formatted_date }}">
+                <div class="day-header">{{ day.date|date:"l, M j" }}</div>
+                <div class="chart-wrapper">
+                    <canvas id="calorie-chart-{{ day.formatted_date }}"></canvas>
+                </div>
+                <div class="chart-wrapper" style="margin-top: 20px;">
+                    <canvas id="macro-chart-{{ day.formatted_date }}"></canvas>
+                </div>
+                <div class="no-data" style="display: none;">No meals planned for this day.</div>
+            </div>
+        {% endfor %}
+    </div>
+
+    {{ meal_analysis|json_script:"meal-analysis-data" }}
+    {{ planned_meals_data|json_script:"planned-meals-data" }}
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const mealAnalysis = JSON.parse(document.getElementById('meal-analysis-data').textContent || '{}');
+        const plannedData = JSON.parse(document.getElementById('planned-meals-data').textContent || '{}');
+        const targetCalories = mealAnalysis ? mealAnalysis.daily_calories : 0;
+
+        document.querySelectorAll('.day-chart-container').forEach(container => {
+            const date = container.dataset.date;
+            const dayData = plannedData[date];
+
+            if (dayData && dayData.totals && dayData.totals.calories > 0) {
+                const totals = dayData.totals;
+                
+                // --- Render Calorie Chart ---
+                const calorieCtx = container.querySelector('[id^="calorie-chart-"]').getContext('2d');
+                new Chart(calorieCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Calories'],
+                        datasets: [
+                            { label: 'Actual', data: [totals.calories], backgroundColor: totals.calories > targetCalories ? '#FF6384' : '#36A2EB' },
+                            { label: 'Target', data: [targetCalories], backgroundColor: '#C9CBCF' }
+                        ]
+                    },
+                    options: { responsive: true, plugins: { legend: { display: true } } }
+                });
+
+                // --- Render Macro Chart ---
+                const totalMacros = totals.protein + totals.carbs + totals.fats;
+                if (totalMacros > 0) {
+                    const macroCtx = container.querySelector('[id^="macro-chart-"]').getContext('2d');
+                    new Chart(macroCtx, {
+                        type: 'pie',
+                        data: {
+                            labels: [`Protein (${totals.protein.toFixed(1)}g)`, `Carbs (${totals.carbs.toFixed(1)}g)`, `Fat (${totals.fats.toFixed(1)}g)`],
+                            datasets: [{
+                                data: [totals.protein, totals.carbs, totals.fats],
+                                backgroundColor: ['#36A2EB', '#FFCD56', '#FF6384']
+                            }]
+                        },
+                        options: { responsive: true, plugins: { legend: { position: 'top' }, tooltip: { callbacks: { label: c => `${c.label.split(' ')[0]}: ${((c.parsed / totalMacros) * 100).toFixed(0)}%` } } } }
+                    });
+                }
+            } else {
+                // If no data, hide the canvas elements and show the 'no data' message
+                container.querySelector('[id^="calorie-chart-"]').style.display = 'none';
+                container.querySelector('[id^="macro-chart-"]').style.display = 'none';
+                container.querySelector('.no-data').style.display = 'block';
+            }
+        });
+    });
+    </script>
+
+    <!-- Debug Data Dump -->
+    <div style="margin-top: 40px; padding: 20px; background-color: #eee;">
+        <h2>Debug Data Dump</h2>
+        <pre style="white-space: pre-wrap; word-wrap: break-word;">{{ planned_meals_data }}</pre>
+    </div>
+
+</body>
+</html> 

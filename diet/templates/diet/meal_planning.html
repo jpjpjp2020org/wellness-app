@@ -1,0 +1,449 @@
+{% load static %}
+{% load diet_extras %}
+
+<div class="meal-planning">
+    <div class="navigation-buttons">
+        <a href="{% url 'users:dashboard' %}" class="button outline">← Back to Dashboard</a>
+    </div>
+
+    <h1>Meal Planning</h1>
+    
+    <div class="summary-section">
+        <h2>Your Profile Summary</h2>
+        
+        {% if health_goals %}
+        <div class="health-context">
+            <h3>Health Goals</h3>
+            <div class="goals-summary">
+                {% if health_goals.goal_category %}
+                <p><strong>Primary Goal:</strong> {{ health_goals.goal_category }}</p>
+                {% endif %}
+                {% if health_goals.lifestyle_category %}
+                <p><strong>Lifestyle:</strong> {{ health_goals.lifestyle_category }}</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="dietary-summary">
+            <h3>Dietary Analysis</h3>
+            
+            {% if debug_info.allergies %}
+            <div class="info-section">
+                <h4>Health & Safety Restrictions</h4>
+                <ul>
+                    {% for allergy in debug_info.allergies %}
+                    <li>{{ allergy }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            {% if debug_info.dietary_tags %}
+            <div class="info-section">
+                <h4>Dietary Considerations</h4>
+                <ul>
+                    {% for tag in debug_info.dietary_tags %}
+                    <li>{{ tag }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            {% if debug_info.recommended_cuisines %}
+            <div class="info-section">
+                <h4>Recommended Cuisines</h4>
+                <p class="recommendation-note">Based on your eating habits and health goals:</p>
+                <ul>
+                    {% for cuisine in debug_info.recommended_cuisines %}
+                    <li>{{ cuisine }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <div class="info-section">
+                <h4>Meal Schedule</h4>
+                <p>Recommended meals per day: {{ debug_info.meals_per_day }}</p>
+                {% if debug_info.meal_times %}
+                <p class="recommendation-note">Suggested meal times:</p>
+                <ul>
+                    {% for time in debug_info.meal_times %}
+                    <li>{{ time }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {% if meal_analysis %}
+    <div class="nutrition-analysis">
+        <h2>Your Nutrition Plan</h2>
+        <div class="analysis-grid">
+            <div class="analysis-section">
+                <h3>Daily Targets</h3>
+                <p class="highlight">{{ meal_analysis.daily_calories }} calories per day</p>
+                
+                <h4>Macro Split</h4>
+                <div class="macro-distribution">
+                    <div class="macro">
+                        <span class="macro-label">Protein</span>
+                        <span class="macro-value">{{ meal_analysis.macro_split.protein }}%</span>
+                    </div>
+                    <div class="macro">
+                        <span class="macro-label">Carbs</span>
+                        <span class="macro-value">{{ meal_analysis.macro_split.carbs }}%</span>
+                    </div>
+                    <div class="macro">
+                        <span class="macro-label">Fats</span>
+                        <span class="macro-value">{{ meal_analysis.macro_split.fats }}%</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="analysis-section">
+                <h3>Meal Distribution</h3>
+                <div class="meal-distribution">
+                    {% for meal, percentage in meal_analysis.meal_size_distribution.items %}
+                    <div class="meal-slot">
+                        <span class="meal-type">{{ meal|title }}</span>
+                        <span class="meal-calories">{{ percentage }}% ({{ meal_analysis.daily_calories|multiply:percentage|divide:100|floatformat:0 }} cal)</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            {% if meal_baseline %}
+            <div class="analysis-section wide">
+                <h3>Meal Structure Guidelines</h3>
+                <div class="guidelines-grid">
+                    <div class="guideline-section">
+                        <h4>Portion Guidelines</h4>
+                        <ul class="portion-list">
+                            {% for group, portion in meal_baseline.portion_guidelines.items %}
+                            <li><strong>{{ group|title }}:</strong> {{ portion }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                    <div class="guideline-section">
+                        <h4>Meal Templates</h4>
+                        {% for meal_time, components in meal_baseline.meal_templates.items %}
+                        <div class="meal-template">
+                            <h5>{{ meal_time|title }}</h5>
+                            <ul>
+                                {% for component in components %}
+                                <li>{{ component }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="analysis-section wide">
+                <h3>Key Considerations</h3>
+                <p class="nutrition-notes">{{ meal_analysis.nutrition_notes }}</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="actions">
+        <div class="button-group">
+            <a href="{% url 'diet:specific_meals' %}" class="button primary">Let's Start Planning Meals</a>
+            <div class="tooltip-wrapper">
+                <a href="{% url 'diet:diet_entry' %}?from_meal_planning=1" class="button secondary">Adjust All Preferences</a>
+                <span class="tooltip">To get better recommendations, you'll need to go through all steps again. This helps ensure all your preferences are properly aligned.</span>
+            </div>
+        </div>
+    </div>
+
+    {% if debug_info %}
+    <div class="debug-section">
+        <h3>Debug Information</h3>
+        <pre>{{ debug_info|pprint }}</pre>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.meal-planning {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.navigation-buttons {
+    margin-bottom: 20px;
+    padding: 10px 0;
+}
+
+.button.outline {
+    background: transparent;
+    border: 2px solid #6c757d;
+    color: #6c757d;
+    text-decoration: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.button.outline:hover {
+    background: #6c757d;
+    color: white;
+}
+
+.summary-section {
+    background: white;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.info-section {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 5px;
+}
+
+.info-section h4 {
+    margin-top: 0;
+    color: #343a40;
+}
+
+.recommendation-note {
+    font-size: 0.9em;
+    color: #666;
+    margin-bottom: 10px;
+    font-style: italic;
+}
+
+.actions {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.tooltip-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip {
+    visibility: hidden;
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    color: white;
+    text-align: center;
+    padding: 8px 12px;
+    border-radius: 4px;
+    width: 300px;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.tooltip::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #333 transparent transparent transparent;
+}
+
+.tooltip-wrapper:hover .tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+.button {
+    padding: 10px 20px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.button.secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.button.secondary:hover {
+    background: #5a6268;
+}
+
+.debug-section {
+    margin-top: 40px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 5px;
+}
+
+.debug-section pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.button-group {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    align-items: center;
+}
+
+.button.primary {
+    background: #007bff;
+    color: white;
+    transition: background-color 0.3s ease;
+}
+
+.button.primary:hover {
+    background: #0056b3;
+}
+
+.nutrition-analysis {
+    background: white;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin: 30px 0;
+}
+
+.analysis-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.analysis-section {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 5px;
+}
+
+.analysis-section.wide {
+    grid-column: 1 / -1;
+}
+
+.highlight {
+    font-size: 1.5em;
+    color: #007bff;
+    font-weight: 500;
+    margin: 10px 0;
+}
+
+.macro-distribution {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.macro {
+    text-align: center;
+    padding: 10px;
+    background: white;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+}
+
+.macro-label {
+    display: block;
+    color: #6c757d;
+    font-size: 0.9em;
+}
+
+.macro-value {
+    display: block;
+    font-size: 1.2em;
+    font-weight: 500;
+    color: #212529;
+}
+
+.meal-distribution {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.meal-slot {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px;
+    background: white;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+}
+
+.meal-type {
+    color: #212529;
+    font-weight: 500;
+}
+
+.meal-calories {
+    color: #6c757d;
+}
+
+.guidelines-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.guideline-section h4 {
+    margin-bottom: 15px;
+    color: #343a40;
+}
+
+.portion-list {
+    list-style: none;
+    padding: 0;
+}
+
+.portion-list li {
+    margin-bottom: 8px;
+    padding: 8px;
+    background: white;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+}
+
+.meal-template {
+    margin-bottom: 15px;
+}
+
+.meal-template h5 {
+    color: #343a40;
+    margin-bottom: 8px;
+}
+
+.meal-template ul {
+    list-style: none;
+    padding: 0;
+}
+
+.meal-template li {
+    padding: 5px 0;
+    color: #495057;
+}
+
+.nutrition-notes {
+    color: #495057;
+    line-height: 1.6;
+}
+</style> 

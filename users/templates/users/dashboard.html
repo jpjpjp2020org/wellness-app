@@ -1,0 +1,180 @@
+{% if messages %}
+<div class="messages">
+    {% for message in messages %}
+        <div class="message">{{ message }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="dashboard-container">
+    <div class="welcome-section">
+        <h1>Welcome, {{ user }}</h1>
+        <p>You are now logged in.</p>
+    </div>
+
+    <div class="consent-section">
+        <details>
+            <summary>Consent and permissions (Mandatory read on 1st visit)</summary>
+            <div class="consent-content">
+                <p class="warning">NB - Read this carefully.</p>
+                <p>We do not track anything hidden and only save your credentials you set up. We use different AI models to give you personalised recommendations and info but it is your responsibility not to share Personally Identifiable Info (PII).</p>
+                <p>Never add your email or name or address etc to any of the forms or tools here post-registration. You having a working account means that we have all the info we need to store your account and access.</p>
+                <p>If you use any of the tools here, you explicitly agree to the above and other common sense points.</p>
+                <p>However, if you really want to share your PII, contact us, so we can terminate your account. Later we will add a delete account button to the dashboard too.</p>
+            </div>
+        </details>
+    </div>
+
+    <div class="menu-section">
+        <div class="menu-group">
+            <h2>Health & Diet</h2>
+            {% if has_diet_preferences %}
+            <a href="{% url 'diet:meal_planning' %}" class="menu-item">Meal Planning & Food Search</a>
+            
+            <a href="{% url 'diet:diet_entry' %}" class="menu-item secondary">Update Dietary Preferences</a>
+            {% else %}
+            <a href="{% url 'diet:diet_entry' %}" class="menu-item">Complete Diet Assessment</a>
+            <a href="{% url 'diet:rag_recipe_search' %}" class="menu-item">Recipe Database (RAG)</a>
+            {% endif %}
+            <a href="{% url 'diet:rag_recipe_search' %}" class="menu-item">Recipe Database (RAG)</a>
+            <a href="{% url 'health:profile_entry' %}" class="menu-item">Health Profile</a>
+            <a href="{% url 'analytics:ai_assistant' %}" class="menu-item">AI Assistant</a>
+        </div>
+
+        <div class="menu-group">
+            <h2>Account Security</h2>
+            {% if has_2fa %}
+            <a href="/2fa/account/two_factor/" class="menu-item">Manage 2FA (enabled)</a>
+            {% else %}
+            <a href="/2fa/account/two_factor/setup/" class="menu-item">Enable 2FA</a>
+            {% endif %}
+            <a href="{% url 'users:reset_me' %}" class="menu-item">Reset password</a>
+            <a href="{% url 'users:logout' %}" class="menu-item logout">Log out</a>
+        </div>
+    </div>
+</div>
+
+<!-- Include the dashboard charts partial -->
+{% include 'users/_dashboard_charts.html' %}
+
+<style>
+    .dashboard-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .welcome-section {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    h1 {
+        color: #333;
+        margin-bottom: 10px;
+    }
+
+    .messages {
+        margin-bottom: 20px;
+    }
+
+    .message {
+        padding: 10px;
+        margin: 5px 0;
+        border-radius: 4px;
+        background: #d4edda;
+        color: #155724;
+        text-align: center;
+    }
+
+    .consent-section {
+        background: white;
+        padding: 20px;
+        border-radius: 4px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+    }
+
+    details summary {
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 4px;
+        cursor: pointer;
+        color: #333;
+        font-weight: 500;
+    }
+
+    .consent-content {
+        padding: 15px;
+        color: #666;
+    }
+
+    .warning {
+        color: #721c24;
+        font-weight: 500;
+    }
+
+    .menu-section {
+        display: grid;
+        gap: 20px;
+    }
+
+    .menu-group {
+        background: white;
+        padding: 20px;
+        border-radius: 4px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .menu-group h2 {
+        color: #333;
+        margin: 0 0 15px 0;
+        font-size: 1.2em;
+    }
+
+    .menu-item {
+        display: block;
+        padding: 12px 15px;
+        margin: 5px 0;
+        background: #fff;
+        color: #333;
+        text-decoration: none;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+    }
+
+    .menu-item:hover {
+        background: #f8f9fa;
+        border-color: #ccc;
+    }
+
+    .menu-item.logout {
+        background: #dc3545;
+        color: white;
+        border-color: #dc3545;
+    }
+
+    .menu-item.logout:hover {
+        background: #c82333;
+        border-color: #bd2130;
+    }
+
+    .menu-item.secondary {
+        background: #f8f9fa;
+        color: #6c757d;
+        border-color: #6c757d;
+    }
+
+    .menu-item.secondary:hover {
+        background: #e2e6ea;
+        border-color: #545b62;
+        color: #545b62;
+    }
+
+    @media (min-width: 768px) {
+        .menu-section {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+</style>
